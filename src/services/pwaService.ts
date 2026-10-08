@@ -6,9 +6,42 @@
 // Default house/store icon in SVG format encoded as data URL
 export const DEFAULT_APP_ICON_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" rx="128" fill="%232563eb"/><path d="M144 240 L256 144 L368 240 V368 H144 Z" fill="none" stroke="white" stroke-width="28" stroke-linejoin="round"/><path d="M224 368 V272 H288 V368" fill="none" stroke="white" stroke-width="28" stroke-linejoin="round"/></svg>`;
 
-export function updateAppBranding(logoUrl?: string, storeName?: string) {
-  const currentTitle = storeName || 'Catálogo de Vendas';
+export function updateAppBranding(logoUrl?: string, storeName?: string, shareDescription?: string) {
+  const currentTitle = storeName && storeName.trim() ? storeName.trim() : 'Casa do criador';
   document.title = currentTitle;
+
+  const effectiveDescription = (shareDescription && shareDescription.trim())
+    ? shareDescription.trim()
+    : `${currentTitle} Segue nosso Catalogo de Produtos com Preços Especiais`;
+
+  // Update or create Meta Tags for Description, OpenGraph, and Twitter Cards
+  const setMetaTag = (nameOrProperty: string, isProperty: boolean, content: string) => {
+    try {
+      const attr = isProperty ? 'property' : 'name';
+      let meta = document.querySelector(`meta[${attr}="${nameOrProperty}"]`) as HTMLMetaElement | null;
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute(attr, nameOrProperty);
+        document.head.appendChild(meta);
+      }
+      meta.content = content;
+    } catch {}
+  };
+
+  setMetaTag('description', false, effectiveDescription);
+  setMetaTag('og:title', true, currentTitle);
+  setMetaTag('og:description', true, effectiveDescription);
+  setMetaTag('twitter:title', false, currentTitle);
+  setMetaTag('twitter:description', false, effectiveDescription);
+
+  // Sync to server disk via Vite API if available so crawlers and scrapers (WhatsApp, Facebook, Twitter) immediately get it
+  try {
+    fetch('/api/update-html-meta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storeName: currentTitle, description: effectiveDescription }),
+    }).catch(() => {});
+  } catch {}
 
   const effectiveIcon = logoUrl && logoUrl.trim() ? logoUrl.trim() : DEFAULT_APP_ICON_SVG;
   const isIco = effectiveIcon.toLowerCase().includes('.ico') || effectiveIcon.startsWith('data:image/x-icon');
@@ -40,7 +73,7 @@ export function updateAppBranding(logoUrl?: string, storeName?: string) {
       id: '/',
       name: currentTitle,
       short_name: currentTitle.slice(0, 12),
-      description: `Catálogo e pedidos online - ${currentTitle}`,
+      description: effectiveDescription,
       start_url: '/',
       scope: '/',
       display: 'standalone',

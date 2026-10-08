@@ -49,9 +49,53 @@ function firebaseConfigPlugin(): Plugin {
   };
 }
 
+function htmlMetaPlugin(): Plugin {
+  return {
+    name: 'html-meta-api',
+    configureServer(server) {
+      server.middlewares.use('/api/update-html-meta', (req, res) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { storeName, description } = JSON.parse(body);
+              if (storeName && description) {
+                const indexPath = path.resolve(__dirname, 'index.html');
+                if (fs.existsSync(indexPath)) {
+                  let html = fs.readFileSync(indexPath, 'utf8');
+                  const safeName = String(storeName).replace(/"/g, '&quot;');
+                  const safeDesc = String(description).replace(/"/g, '&quot;');
+                  html = html.replace(/<title>.*?<\/title>/s, `<title>${safeName}</title>`);
+                  html = html.replace(/<meta\s+name="description"\s+content=".*?"\s*\/>/s, `<meta name="description" content="${safeDesc}" />`);
+                  html = html.replace(/<meta\s+property="og:title"\s+content=".*?"\s*\/>/s, `<meta property="og:title" content="${safeName}" />`);
+                  html = html.replace(/<meta\s+property="og:description"\s+content=".*?"\s*\/>/s, `<meta property="og:description" content="${safeDesc}" />`);
+                  html = html.replace(/<meta\s+name="twitter:title"\s+content=".*?"\s*\/>/s, `<meta name="twitter:title" content="${safeName}" />`);
+                  html = html.replace(/<meta\s+name="twitter:description"\s+content=".*?"\s*\/>/s, `<meta name="twitter:description" content="${safeDesc}" />`);
+                  fs.writeFileSync(indexPath, html, 'utf8');
+                }
+              }
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({ success: true }));
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+        } else {
+          res.statusCode = 405;
+          res.end('Method Not Allowed');
+        }
+      });
+    }
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), firebaseConfigPlugin()],
+    plugins: [react(), tailwindcss(), firebaseConfigPlugin(), htmlMetaPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

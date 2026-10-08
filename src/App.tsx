@@ -169,10 +169,10 @@ export default function App() {
     } catch {}
   }, [cartItems]);
 
-  // Sync PWA Branding (Favicon, Apple icon, Web App Manifest) with store settings
+  // Sync PWA Branding (Favicon, Apple icon, Web App Manifest) and social share meta tags with store settings
   useEffect(() => {
-    updateAppBranding(settings.logoUrl, settings.storeName);
-  }, [settings.logoUrl, settings.storeName]);
+    updateAppBranding(settings.logoUrl, settings.storeName, settings.shareDescription);
+  }, [settings.logoUrl, settings.storeName, settings.shareDescription]);
 
   // Compute Store Open/Closed status
   const openStatus = checkStoreOpenStatus(settings);

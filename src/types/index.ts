@@ -90,6 +90,7 @@ export interface StoreSettings {
   hidePetFilters?: boolean;
   disablePetMode?: boolean;
   logoUrl?: string;
+  shareDescription?: string;
 }
 
 export interface OrderRecord {

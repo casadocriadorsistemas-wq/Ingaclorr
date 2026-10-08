@@ -23,8 +23,11 @@ import {
   AlertTriangle,
   RefreshCw,
   Eye,
-  Store
+  Store,
+  Share2,
+  Globe
 } from 'lucide-react';
+import { updateAppBranding } from '../services/pwaService';
 import { Product, Category, Coupon, StoreSettings, OrderRecord, SellMode, AnimalType } from '../types';
 import { 
   saveProduct, 
@@ -324,15 +327,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSavingSettings(true);
     setSaveSuccessMsg('');
     try {
-      const updated = {
+      const activeStoreName = formSettings.storeName?.trim() || 'Casa do criador';
+      const defaultDesc = `${activeStoreName} Segue nosso Catalogo de Produtos com Preços Especiais`;
+      const finalDesc = formSettings.shareDescription?.trim() || defaultDesc;
+
+      const updated: StoreSettings = {
         ...formSettings,
+        storeName: activeStoreName,
+        shareDescription: finalDesc,
         adminPassword: formSettings.adminPassword?.trim() || '1234'
       };
       await saveSettings(updated);
+      updateAppBranding(updated.logoUrl, updated.storeName, updated.shareDescription);
       if (onSettingsUpdated) {
         onSettingsUpdated(updated);
       }
-      setSaveSuccessMsg('✓ Todas as configurações e nova senha foram salvas com sucesso!');
+      setSaveSuccessMsg('✓ Configurações, nome e descrição de compartilhamento salvas com sucesso!');
       setTimeout(() => setSaveSuccessMsg(''), 4000);
     } catch (err) {
       console.error('Error saving settings:', err);
@@ -1408,7 +1418,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <input
                         type="text"
                         value={formSettings.storeName}
-                        onChange={(e) => setFormSettings({ ...formSettings, storeName: e.target.value })}
+                        onChange={(e) => {
+                          const newName = e.target.value;
+                          setFormSettings((prev) => {
+                            const oldDefault = `${(prev.storeName || '').trim()} Segue nosso Catalogo de Produtos com Preços Especiais`;
+                            const wasUsingDefault = !prev.shareDescription || prev.shareDescription.trim() === oldDefault.trim();
+                            return {
+                              ...prev,
+                              storeName: newName,
+                              shareDescription: wasUsingDefault
+                                ? `${newName.trim() || 'Casa do criador'} Segue nosso Catalogo de Produtos com Preços Especiais`
+                                : prev.shareDescription
+                            };
+                          });
+                        }}
                         className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold outline-none"
                       />
                     </div>
@@ -1424,6 +1447,90 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         onChange={(e) => setFormSettings({ ...formSettings, whatsappNumber: e.target.value })}
                         className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-bold outline-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Descrição do Link ao Digitar ou Compartilhar (WhatsApp & Redes) */}
+                  <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-emerald-700" />
+                        <h4 className="font-extrabold text-stone-900 text-xs sm:text-sm">
+                          Descrição ao Digitar ou Compartilhar o Link da Loja
+                        </h4>
+                      </div>
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                        WhatsApp & Redes
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      Esta é a descrição que o WhatsApp, Facebook e navegadores mostram quando você digita ou envia o link do catálogo para seus clientes.
+                    </p>
+
+                    {/* WhatsApp-Style Link Preview Box */}
+                    <div className="p-3 bg-white rounded-xl border border-stone-200 shadow-xs space-y-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 block">
+                        Prévia do Link no WhatsApp:
+                      </span>
+                      <div className="bg-[#eef8f2] border border-[#d2edd9] rounded-xl p-3 flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                          {formSettings.logoUrl ? (
+                            <img
+                              src={formSettings.logoUrl}
+                              alt="Logo"
+                              className="w-full h-full object-contain p-0.5 bg-white"
+                            />
+                          ) : (
+                            <Store className="w-6 h-6 text-white" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-xs sm:text-sm text-stone-900 truncate">
+                            {formSettings.storeName?.trim() || 'Casa do criador'}
+                          </p>
+                          <p className="text-xs text-stone-700 font-medium line-clamp-2 mt-0.5">
+                            {formSettings.shareDescription?.trim() || `${formSettings.storeName?.trim() || 'Casa do criador'} Segue nosso Catalogo de Produtos com Preços Especiais`}
+                          </p>
+                          <span className="text-[11px] text-emerald-700 font-mono mt-1 block truncate">
+                            {typeof window !== 'undefined' ? window.location.host : 'catalogo.online'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Input Field & Restore Default */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-stone-800">
+                          Texto da Descrição do Link:
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDesc = `${formSettings.storeName?.trim() || 'Casa do criador'} Segue nosso Catalogo de Produtos com Preços Especiais`;
+                            setFormSettings({ ...formSettings, shareDescription: newDesc });
+                          }}
+                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Restaurar formato padrão</span>
+                        </button>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={
+                          formSettings.shareDescription !== undefined
+                            ? formSettings.shareDescription
+                            : `${formSettings.storeName?.trim() || 'Casa do criador'} Segue nosso Catalogo de Produtos com Preços Especiais`
+                        }
+                        onChange={(e) => setFormSettings({ ...formSettings, shareDescription: e.target.value })}
+                        placeholder={`${formSettings.storeName?.trim() || 'Casa do criador'} Segue nosso Catalogo de Produtos com Preços Especiais`}
+                        className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-medium text-stone-800 bg-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <p className="text-[10px] text-stone-500">
+                        Formato solicitado: <em>"(nome da loja cadastrada) Segue nosso Catalogo de Produtos com Preços Especiais"</em>.
+                      </p>
                     </div>
                   </div>
 
