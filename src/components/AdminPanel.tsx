@@ -355,7 +355,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <h2 className="font-extrabold text-base sm:text-lg">Área do Lojista</h2>
               <p className="text-xs text-stone-300">
-                Gerencie catálogo, rações por saco/kg, cupons, horários e pedidos
+                Gerencie catálogo, cupons, horários e pedidos
               </p>
             </div>
           </div>
