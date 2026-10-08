@@ -413,7 +413,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             {/* Navigation Tabs */}
             <div className="flex items-center gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-4 py-2 shrink-0">
               {[
-                { id: 'products', label: 'Produtos & Rações', icon: <Package className="w-4 h-4" /> },
+                { id: 'products', label: '+ Produtos', icon: <Package className="w-4 h-4" /> },
                 { id: 'categories', label: 'Categorias', icon: <Layers className="w-4 h-4" /> },
                 { id: 'coupons', label: 'Cupons de Desconto', icon: <Tag className="w-4 h-4" /> },
                 { id: 'settings', label: 'Horários & Loja', icon: <Clock className="w-4 h-4" /> },
